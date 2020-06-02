@@ -30,6 +30,7 @@ def register():
         db.session.add(user)
         ## commits user creation to db
         db.session.commit()
+        login_user(user)
         ## flash function will run once redirected to the home.html which is being redirected useing the redirect function and using the url_for('home) pointing at the function home() which isnt the same as the route ("/home
         flash(f'Your account has been created!! You are now able to log in', 'success')
         return redirect(url_for('create_post'))
@@ -39,13 +40,19 @@ def register():
 
 @app.route("/login", methods = ['GET', 'POST'])
 def login():
-    ##if current_user.is_authenticated:
-    ##   return redirect(url_for('create_post'))
+    if current_user.is_authenticated:
+       return redirect(url_for('create_post'))
     ## create variable form and make it call LoginForm() from the forms.py which holds requirements for the registration form
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email = form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
+        if user and bcrypt.check_password_hash(user.password, form.password.data) and (user.user_type == 'admin'):
+            login_user(user, remember = form.remember.data)
+            ## next_page is a variable set to take the user to the page it originally tried to access but failed to do so incase they werent logged in
+            next_page = request.args.get('next')
+            ## turnary arguement, redirect to next_page if there was a next_page at the time if not take them straight to the home page
+            return redirect(next_page) if next_page else redirect(url_for('admin'))
+        elif user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user, remember = form.remember.data)
             ## next_page is a variable set to take the user to the page it originally tried to access but failed to do so incase they werent logged in
             next_page = request.args.get('next')
@@ -82,4 +89,8 @@ def in_queue():
 @app.route("/admin", methods = ['GET', 'POST'])
 @login_required
 def admin():
-    pass
+    if current_user.user_type == 'admin':
+        return render_template('admin.html')
+    else:
+        flash('You are unautorized to access this page....BITCH', 'danger')
+        return redirect(url_for('home'))
