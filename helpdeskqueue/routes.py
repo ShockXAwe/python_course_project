@@ -16,8 +16,8 @@ def home():
 @app.route("/register", methods = ['GET', 'POST'])
 def register():
     ## logic for if user is authenticated take them straight home
-    ##if current_user.is_authenticated:
-    ##    return redirect(url_for('home'))
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     ## create variable form and make it call RegistrationForm() from the forms.py which holds requirements for the registration form
     form = RegistrationForm()
     ## logic to validate user account upon submit
