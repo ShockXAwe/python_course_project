@@ -9,10 +9,11 @@
                 <div class="media-body">
                 <div class="article-metadata">
                     {% if post.status == status[0] %}
-                        <p style="background-color: #FFFF00">Status: <strong>{{ post.status.upper() }}</strong></p>
+                        <p style="background-color: #FFFF00; text-align: center"><strong>Status: {{ post.status.upper() }}</strong></p>
                     {% endif %}
                     {% if post.status == status[1] %}
-                        <p style="background-color: green">Status: <strong>{{ post.status.upper() }}</strong></p>
+                        <p style = "background-color: #b2ff59; text-align: center" ><strong>Status: {{ post.status.upper() }}</strong></p>
+                        <p style = "background-color: #b2ff59; text-align: center"><strong>Assignee: {{ post.assisted_by.upper() }}</strong></p>
                     {% endif %}
                     <a class="mr-2" href="{{ url_for('user_posts', username = post.author.username) }}">{{ post.author.username }}</a>
                     <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
@@ -25,3 +26,4 @@
     {% endfor %}
     
 {% endblock content %}
+

@@ -82,14 +82,22 @@ def create_post():
     return render_template('create_post.html', title = 'Get in line', form = form, legend = 'How can we help you?')
 
 @app.route("/post/<int:post_id>", methods = ['GET', 'POST'])
+@login_required
 def post(post_id):
     admin = 'admin'
     status = ['open', 'assisting']
     form = QueueForm()
     post = Post.query.get_or_404(post_id)
+    if request.method == 'POST' and (current_user.user_type == 'admin'):
+        post.status = 'complete'
+        post.notes = form.notes.data
+        post.assisted_by = current_user.username
+        db.session.commit()   
+        flash('Case has been completed', 'success')
+        return redirect(url_for('admin'))
     return render_template('post.html', title = post.title, post = post, admin = admin, status = status, form = form)
 
-## NEED TO CHANGE THIS ROUTE TO UPDATE TO WORKING OR COMPLETE AND NOT SHOW IN ADMIN PAGE
+
 @app.route("/post/<int:post_id>/assist", methods = ['GET', 'POST'])
 @login_required
 def assist_post(post_id):
@@ -99,25 +107,29 @@ def assist_post(post_id):
         abort(403)
     form = QueueForm
     post.status = 'assisting'
+    post.assisted_by = current_user.username
     db.session.commit()
     flash('Status changed to assisting', 'success')
     return redirect(url_for('post', post_id = post.id, form = form))
     #return redirect(url_for('admin', form = form))
 
-@app.route("/post/<int:post_id>/complete", methods = ['GET', 'POST'])
-@login_required
-def complete_post(post_id):
-    form = QueueForm()
-    post = Post.query.get_or_404(post_id)
-    if current_user.user_type != 'admin':
-        abort(403)
-    post.status = 'complete'
-    print('***********************************************************************', form.notes.data, form.notes)
-    post.notes = form.notes.data
-    post.assisted_by = current_user.username
-    db.session.commit()   
-    flash('Case has been completed', 'success')
-    return redirect(url_for('admin'))
+#### DOES NOT WORK WITH POST
+#@app.route("/post/<int:post_id>/complete", methods = ['GET', 'POST'])
+#@login_required
+#def complete_post(post_id):
+#    form = QueueForm()
+#    post = Post.query.get_or_404(post_id)
+#    if current_user.user_type != 'admin':
+#        abort(403)
+#    if request.method == 'POST':
+#        post.status = 'complete'
+#        print('***********************************************************************', form.notes.data, form.notes)
+#        post.notes = form.notes.data
+#        post.assisted_by = current_user.username
+#        db.session.commit()   
+#        flash('Case has been completed', 'success')
+#        return redirect(url_for('admin'))
+
 
 
 @app.route("/post/<int:post_id>/cancel", methods = ['POST'])
@@ -126,8 +138,10 @@ def cancel_post(post_id):
     post = Post.query.get_or_404(post_id)
     if current_user.user_type == 'admin':
         post.status = 'canceled'
+        post.assisted_by = current_user.username
+        post.notes = f'Manually canceled by {current_user.username}'
         db.session.commit()   
-        flash('Case has been canceled', 'information')
+        flash('Case has been canceled', 'danger')
         return redirect(url_for('admin'))
 
 ## USED LATER TO SHOW USERS POSTS
@@ -159,5 +173,5 @@ def admin():
         posts = Post.query.order_by(Post.date_posted.desc()).paginate(page = page, per_page = 5)
         return render_template('admin.html', posts = posts, status = status)
     else:
-        flash('You are unautorized to access this page....BITCH', 'danger')
+        flash('You are unautorized to access this page', 'danger')
         return redirect(url_for('home'))
