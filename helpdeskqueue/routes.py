@@ -1,6 +1,6 @@
 import os
 import secrets
-from PIL import Image
+#from PIL import Image
 from flask import render_template, url_for, flash, redirect, request, abort
 from helpdeskqueue import app, db, bcrypt
 from helpdeskqueue.forms import LoginForm, RegistrationForm, QueueForm
@@ -74,11 +74,73 @@ def create_post():
     form = QueueForm()
     if form.validate_on_submit():
         post = Post(title = form.title.data, content = form.content.data, category = form.category.data, status = "open", author = current_user)
+        print('***********************************************************************', 'Category: ',form.content, 'Content: ',form.content.data)
         db.session.add(post)
         db.session.commit()
         flash('You are now in line for help desk support!', 'success')
         return redirect(url_for('in_queue'))
     return render_template('create_post.html', title = 'Get in line', form = form, legend = 'How can we help you?')
+
+@app.route("/post/<int:post_id>", methods = ['GET', 'POST'])
+def post(post_id):
+    admin = 'admin'
+    status = ['open', 'assisting']
+    form = QueueForm()
+    post = Post.query.get_or_404(post_id)
+    return render_template('post.html', title = post.title, post = post, admin = admin, status = status, form = form)
+
+## NEED TO CHANGE THIS ROUTE TO UPDATE TO WORKING OR COMPLETE AND NOT SHOW IN ADMIN PAGE
+@app.route("/post/<int:post_id>/assist", methods = ['GET', 'POST'])
+@login_required
+def assist_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    form = QueueForm
+    if current_user.user_type != 'admin':
+        abort(403)
+    form = QueueForm
+    post.status = 'assisting'
+    db.session.commit()
+    flash('Status changed to assisting', 'success')
+    return redirect(url_for('post', post_id = post.id, form = form))
+    #return redirect(url_for('admin', form = form))
+
+@app.route("/post/<int:post_id>/complete", methods = ['GET', 'POST'])
+@login_required
+def complete_post(post_id):
+    form = QueueForm()
+    post = Post.query.get_or_404(post_id)
+    if current_user.user_type != 'admin':
+        abort(403)
+    post.status = 'complete'
+    print('***********************************************************************', form.notes.data, form.notes)
+    post.notes = form.notes.data
+    post.assisted_by = current_user.username
+    db.session.commit()   
+    flash('Case has been completed', 'success')
+    return redirect(url_for('admin'))
+
+
+@app.route("/post/<int:post_id>/cancel", methods = ['POST'])
+@login_required
+def cancel_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if current_user.user_type == 'admin':
+        post.status = 'canceled'
+        db.session.commit()   
+        flash('Case has been canceled', 'information')
+        return redirect(url_for('admin'))
+
+## USED LATER TO SHOW USERS POSTS
+@app.route("/user/<string:username>")
+def user_posts(username):
+    ## paginate is used here to show a certain amount of posts per page
+    page = request.args.get('page', 1, type = int)
+    user = User.query.filter_by(username = username).first_or_404()
+    posts = Post.query.filter_by(author = user)\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    ## render_template is the function that points at the html you want to direct the route to, you can add a variable in the arguements to be used within the html using jinja
+    return render_template('user_posts.html', posts = posts, user = user)
 
 @app.route("/in_queue", methods = ['GET', 'POST'])
 @login_required
@@ -86,11 +148,16 @@ def in_queue():
     count = "5"
     return render_template('in_queue.html', count = count)
 
+## NEED TO DISPLAY ON OPEN AND CURRENTLY ASSISTING POSTS, NEED TO HIDE CLOSED POSTS
 @app.route("/admin", methods = ['GET', 'POST'])
 @login_required
 def admin():
+    status = ['open', 'assisting']
     if current_user.user_type == 'admin':
-        return render_template('admin.html')
+            ## paginate is used here to show a certain amount of posts per page
+        page = request.args.get('page', 1, type = int)
+        posts = Post.query.order_by(Post.date_posted.desc()).paginate(page = page, per_page = 5)
+        return render_template('admin.html', posts = posts, status = status)
     else:
         flash('You are unautorized to access this page....BITCH', 'danger')
         return redirect(url_for('home'))

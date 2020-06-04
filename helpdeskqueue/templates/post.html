@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <article class="media content-section">
+        <div class="media-body">
+          <div class="article-metadata">
+            <a class="mr-2" href="{{ url_for('user_posts', username = post.author.username) }}">{{ post.author.username }}</a>
+            <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
+            <a class = "uppercase">{{ post.status }}</a>
+
+          </div>
+          <h2 class = "article-title">{{ post.title }}</h2>
+          <p class= "article-content">{{ post.content }}</p>
+          {% if admin == current_user.user_type %}
+          <div>
+              {% if post.status == status[0] %}
+                <!-- {{ form.submit(class="btn btn-outline-info") }} -->
+                <a class = "btn btn-primary btn-sm mt-1 mb-1" href = "{{ url_for('assist_post', post_id = post.id) }}">Start Assisance</a>
+                <button type = "button" class = "btn btn-danger btn-sm m-1" data-toggle="modal" data-target="#deleteModal">Cancel</button>
+              {% endif %}
+              {% if post.status == status[1] %}
+              <form method="POST" action="">
+                    <div class="form-group">
+                        {{ form.notes.label(class="form-control-label") }}
+                        {% if form.notes.errors %}
+                            {{ form.notes(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.notes.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.notes(class="form-control form-control-lg") }}
+                        {% endif %}
+                    </div>
+              </form>
+                    <!-- {{ form.submit(class="btn btn-outline-info") }} -->
+                    <a class = "btn btn-success btn-sm mt-1 mb-1" href = "{{ url_for('complete_post', post_id = post.id) }}">Complete</a>
+                    <button type = "button" class = "btn btn-danger btn-sm m-1" data-toggle="modal" data-target="#deleteModal">Cancel</button>
+              {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </article>
+      <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="deleteModalLabel">Are you sure you want to cancel this?</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+              <form action = "{{ url_for('cancel_post', post_id = post.id) }}" method = "POST">
+                  <input class = "btn btn-success" type = "submit" value = "Delete">
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+{% endblock content %}

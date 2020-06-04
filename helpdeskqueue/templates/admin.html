@@ -1,6 +1,27 @@
 {% extends 'layout.html' %}
 {% block content %}
 
-<h2>This is the admin page</h2>
+    <h2>This is the admin page</h2>
+
+    {% for post in posts.items %}
+        {% if post.status == status[0] or post.status == status[1] %}
+            <article class="media content-section">
+                <div class="media-body">
+                <div class="article-metadata">
+                    {% if post.status == status[0] %}
+                        <p style="background-color: #FFFF00">Status: <strong>{{ post.status.upper() }}</strong></p>
+                    {% endif %}
+                    {% if post.status == status[1] %}
+                        <p style="background-color: green">Status: <strong>{{ post.status.upper() }}</strong></p>
+                    {% endif %}
+                    <a class="mr-2" href="{{ url_for('user_posts', username = post.author.username) }}">{{ post.author.username }}</a>
+                    <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
+                </div>
+                <h2><a class="article-title" href="{{ url_for('post', post_id = post.id) }}">{{ post.title }}</a></h2>
+                <p class="article-content">{{ post.content }}</p>
+                </div>
+            </article>
+        {% endif %}
+    {% endfor %}
     
 {% endblock content %}

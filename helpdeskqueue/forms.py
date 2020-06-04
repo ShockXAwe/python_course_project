@@ -9,7 +9,7 @@ from helpdeskqueue.models import User
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators = [DataRequired(), Length(min = 2, max = 20)])
     email = StringField('Email', validators = [DataRequired(), Email()])
-    password = PasswordField('Password', validators = [DataRequired()])
+    password = PasswordField('Password', validators = [DataRequired(), Length(min = 8, max = 20)])
     confirm_password = PasswordField('Confirm Password', validators = [DataRequired(), EqualTo('password')])
     submit = SubmitField('Sign Up')
 
@@ -35,4 +35,5 @@ class QueueForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     content = TextAreaField('Content', validators=[DataRequired()])
     category = SelectField('Category', choices= [('default', "Please select one from this drop down"),('access needed', "Access needed"),('equipment requests',"Equipment requests"), ('laptop hardware',"Laptop hardware issues"), ('laptop performance',"Laptop performance"), ('software requests',"Software requests"), ('shoretel',"Shoretel"), ('vpn',"VPN"), ('webex',"Webex")], validators=[DataRequired()])
+    notes = TextAreaField('Notes')
     submit = SubmitField('Post')

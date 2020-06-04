@@ -25,6 +25,8 @@ class Post(db.Model):
     category = db.Column(db.Text, nullable = False)
     status = db.Column(db.Text, nullable = False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
+    notes = db.Column(db.String, nullable = True)
+    assisted_by = db.Column(db.String, nullable = True)
 
     def __repr__(self):
         return f"Post('{self.title}','{self.date_posted}')"
