@@ -21,6 +21,10 @@
             <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarToggle">
+              <div class="navbar-nav mr-auto">
+                <!-- <a class="nav-item nav-link" href="{{url_for('home')}}">Home</a>
+                <a class="nav-item nav-link" href="{{url_for('home')}}">About</a> -->
+            </div>
               <div class="navbar-nav">
                 {% if current_user.user_type == 'admin'%}
                   <a class="nav-item nav-link" href="{{url_for('admin')}}">God Mode</a>

@@ -37,4 +37,9 @@ class QueueForm(FlaskForm):
     category = SelectField('Category', choices= [('default', "Please select one from this drop down"),('access needed', "Access needed"),('equipment requests',"Equipment requests"), ('laptop hardware',"Laptop hardware issues"), ('laptop performance',"Laptop performance"), ('software requests',"Software requests"), ('shoretel',"Shoretel"), ('vpn',"VPN"), ('webex',"Webex")], validators=[DataRequired()])
     notes = TextAreaField('Notes')
     submit = SubmitField('Post')
-    submit_complete = SubmitField('Complete')
+
+
+class PageAction(FlaskForm):
+    filter_by = SelectField('Filter', choices= [('all', "All"),('open', "Open"),('assisting',"Assisting"), ('complete',"Complete"), ('canceled',"Canceled")])
+    submit = SubmitField('Complete')
+
