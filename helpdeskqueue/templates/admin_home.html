@@ -1,0 +1,12 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+    <h2>This is the admins home page</h2>
+    <h1>Welcome!</h1>
+    <h2>Please select below</h2>
+    <p>Tickets</p>
+    <a class="btn btn-secondary btn-lg mt-1 mb-1" href="{{ url_for('admin')}}">Tickets</a>
+    <p>Reports</p>
+    <a class="btn btn-secondary btn-lg mt-1 mb-1" href="{{ url_for('reports')}}">Reports</a>
+
+{% endblock content %}

@@ -9,6 +9,10 @@ from flask_login import login_user, logout_user, current_user, login_required
 
 status = ['open', 'assisting', 'complete', 'canceled']
 
+# Home and Register
+#####################################################################################
+#####################################################################################
+
 @app.route("/")
 @app.route("/home", methods = ['GET', 'POST'])
 def home():
@@ -44,12 +48,18 @@ def register():
     return render_template('register.html', title = 'Register', form=form)
 
 
+
+# Login/Logout
+#####################################################################################
+#####################################################################################
+
+@app.route("/", methods = ['GET', 'POST'])
 @app.route("/login", methods = ['GET', 'POST'])
 def login():
     if current_user.is_authenticated and (current_user == 'user'):
         return redirect(url_for('user_page'))
     if current_user.is_authenticated and (current_user == 'admin'):
-        return redirect(url_for('admin'))
+        return redirect(url_for('admin_home'))
     ## create variable form and make it call LoginForm() from the forms.py which holds requirements for the registration form
     form = LoginForm()
     if form.validate_on_submit():
@@ -59,7 +69,7 @@ def login():
             ## next_page is a variable set to take the user to the page it originally tried to access but failed to do so incase they werent logged in
             next_page = request.args.get('next')
             ## turnary arguement, redirect to next_page if there was a next_page at the time if not take them straight to the home page
-            return redirect(next_page) if next_page else redirect(url_for('admin'))
+            return redirect(next_page) if next_page else redirect(url_for('admin_home'))
         elif user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user, remember = form.remember.data)
             ## next_page is a variable set to take the user to the page it originally tried to access but failed to do so incase they werent logged in
@@ -76,6 +86,16 @@ def logout():
     flash('You have successfully been logged out', 'info')
     return redirect(url_for('home'))
 
+
+# User Routes
+#####################################################################################
+#####################################################################################
+
+@app.route("/user_page", methods = ['GET', 'POST'])
+@login_required
+def user_page():
+    return render_template('user_page.html')
+
 @app.route("/post/new", methods = ['GET', 'POST'])
 @login_required
 def create_post():
@@ -88,6 +108,139 @@ def create_post():
         flash('You are now in line for help desk support!', 'success')
         return redirect(url_for('in_queue'))
     return render_template('create_post.html', title = 'Get in line', form = form, legend = 'How can we help you?')
+
+@app.route("/in_queue", methods = ['GET', 'POST'])
+@login_required
+def in_queue():
+    count = "5"
+    return render_template('in_queue.html', count = count)
+
+
+@app.route("/user/<string:username>")
+def user_posts(username):
+    ## paginate is used here to show a certain amount of posts per page
+    action = PageAction()
+    page = request.args.get('page', 1, type = int)
+    user = User.query.filter_by(username = username).first_or_404()
+    print(user.username)
+    posts = Post.query.filter_by(author = user)\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    ## render_template is the function that points at the html you want to direct the route to, you can add a variable in the arguements to be used within the html using jinja
+    return render_template('user_posts.html', posts = posts, user = user, status = status, action = action, filter_status = 'open')
+
+
+@app.route("/user/<string:username>/open")
+def user_posts_open(username):
+    ## paginate is used here to show a certain amount of posts per page
+    action = PageAction()
+    print(PageAction().filter_by)
+    page = request.args.get('page', 1, type = int)
+    user = User.query.filter_by(username = username).first_or_404()
+    posts = Post.query.filter_by(author = user, status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    if posts.total == 0:
+        flash('You currently have no open tickets', 'info')
+   ## render_template is the function that points at the html you want to direct the route to, you can add a variable in the arguements to be used within the html using jinja
+    return render_template('user_posts.html', posts = posts, user = user, status = status, action = action)
+
+
+@app.route("/user/<string:username>/assisting")
+def user_posts_assisting(username):
+    ## paginate is used here to show a certain amount of posts per page
+    action = PageAction()
+    page = request.args.get('page', 1, type = int)
+    user = User.query.filter_by(username = username).first_or_404()
+    posts = Post.query.filter_by(author = user, status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    if posts.total == 0:
+        flash('You currently have no one assisting your tickets', 'info')
+
+   ## render_template is the function that points at the html you want to direct the route to, you can add a variable in the arguements to be used within the html using jinja
+    return render_template('user_posts.html', posts = posts, user = user, status = status, action = action)
+
+
+@app.route("/user/<string:username>/complete")
+def user_posts_complete(username):
+    ## paginate is used here to show a certain amount of posts per page
+    action = PageAction()
+    print(PageAction().filter_by)
+    page = request.args.get('page', 1, type = int)
+    user = User.query.filter_by(username = username).first_or_404()
+    posts = Post.query.filter_by(author = user, status = status[2])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    if posts.total == 0:
+        flash('You currently have no completed tickets', 'info')
+   ## render_template is the function that points at the html you want to direct the route to, you can add a variable in the arguements to be used within the html using jinja
+    return render_template('user_posts.html', posts = posts, user = user, status = status, action = action)
+
+
+@app.route("/user/<string:username>/canceled")
+def user_posts_canceled(username):
+    ## paginate is used here to show a certain amount of posts per page
+    action = PageAction()
+    print(PageAction().filter_by)
+    page = request.args.get('page', 1, type = int)
+    user = User.query.filter_by(username = username).first_or_404()
+    posts = Post.query.filter_by(author = user, status = status[3])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    if posts.total == 0:
+        flash('You currently have no canceled tickets', 'info')
+   ## render_template is the function that points at the html you want to direct the route to, you can add a variable in the arguements to be used within the html using jinja
+    return render_template('user_posts.html', posts = posts, user = user, status = status, action = action)
+
+
+# Admin Routes
+#####################################################################################
+#####################################################################################
+
+
+@app.route("/admin", methods = ['GET', 'POST'])
+@login_required
+def admin_home():
+    if current_user.user_type == 'admin':
+        return render_template('admin_home.html')
+    else:
+        flash('You are unautorized to access this page', 'danger')
+        return redirect(url_for('home'))
+
+
+# Need logic for filter buttons
+@app.route("/admin/user_posts", methods = ['GET', 'POST'])
+@login_required
+def admin():
+    if current_user.user_type == 'admin':
+        ## paginate is used here to show a certain amount of posts per page
+        page = request.args.get('page', 1, type = int)
+        posts = Post.query.order_by(Post.date_posted.desc()).paginate(page = page, per_page = 5)
+        return render_template('admin.html', posts = posts, status = status)
+    else:
+        flash('You are unautorized to access this page', 'danger')
+        return redirect(url_for('home'))
+
+## Need to create reports html and logic
+@app.route("/admin/reports", methods = ['GET', 'POST'])
+@login_required
+def reports():
+    if current_user.user_type == 'admin':
+        ## paginate is used here to show a certain amount of posts per page
+        page = request.args.get('page', 1, type = int)
+        posts = Post.query.order_by(Post.date_posted.desc()).paginate(page = page, per_page = 5)
+        return render_template('reports.html')
+    else:
+        flash('You are unautorized to access this page', 'danger')
+        return redirect(url_for('home'))
+
+## Need to create user_accounts html and logic
+@app.route("/admin/user_accounts", methods = ['GET', 'POST'])
+@login_required
+def user_accounts():
+    pass
+
 
 @app.route("/post/<int:post_id>", methods = ['GET', 'POST'])
 @login_required
@@ -110,10 +263,9 @@ def post(post_id):
 @login_required
 def assist_post(post_id):
     post = Post.query.get_or_404(post_id)
-    form = QueueForm
+    form = QueueForm()
     if current_user.user_type != 'admin':
         abort(403)
-    form = QueueForm
     post.status = status[1]
     post.assisted_by = current_user.username
     db.session.commit()
@@ -121,22 +273,6 @@ def assist_post(post_id):
     return redirect(url_for('post', post_id = post.id, form = form))
     #return redirect(url_for('admin', form = form))
 
-#### DOES NOT WORK WITH POST
-#@app.route("/post/<int:post_id>/complete", methods = ['GET', 'POST'])
-#@login_required
-#def complete_post(post_id):
-#    form = QueueForm()
-#    post = Post.query.get_or_404(post_id)
-#    if current_user.user_type != 'admin':
-#        abort(403)
-#    if request.method == 'POST':
-#        post.status = 'complete'
-#        print('***********************************************************************', form.notes.data, form.notes)
-#        post.notes = form.notes.data
-#        post.assisted_by = current_user.username
-#        db.session.commit()   
-#        flash('Case has been completed', 'success')
-#        return redirect(url_for('admin'))
 
 @app.route("/post/<int:post_id>/cancel", methods = ['POST'])
 @login_required
@@ -149,41 +285,3 @@ def cancel_post(post_id):
         db.session.commit()   
         flash('Case has been canceled', 'danger')
         return redirect(url_for('admin'))
-
-
-@app.route("/user/<string:username>")
-def user_posts(username):
-    ## paginate is used here to show a certain amount of posts per page
-    action = PageAction()
-    print(PageAction().filter_by)
-    page = request.args.get('page', 1, type = int)
-    user = User.query.filter_by(username = username).first_or_404()
-    posts = Post.query.filter_by(author = user)\
-        .order_by(Post.date_posted.desc())\
-        .paginate(page = page, per_page = 5)
-    ## render_template is the function that points at the html you want to direct the route to, you can add a variable in the arguements to be used within the html using jinja
-    return render_template('user_posts.html', posts = posts, user = user, status = status, action = action)
-
-@app.route("/in_queue", methods = ['GET', 'POST'])
-@login_required
-def in_queue():
-    count = "5"
-    return render_template('in_queue.html', count = count)
-
-@app.route("/user_page", methods = ['GET', 'POST'])
-@login_required
-def user_page():
-    return render_template('user_page.html')
-
-## NEED TO ADD PAGNATION TO HTML
-@app.route("/admin", methods = ['GET', 'POST'])
-@login_required
-def admin():
-    if current_user.user_type == 'admin':
-            ## paginate is used here to show a certain amount of posts per page
-        page = request.args.get('page', 1, type = int)
-        posts = Post.query.order_by(Post.date_posted.desc()).paginate(page = page, per_page = 5)
-        return render_template('admin.html', posts = posts, status = status)
-    else:
-        flash('You are unautorized to access this page', 'danger')
-        return redirect(url_for('home'))

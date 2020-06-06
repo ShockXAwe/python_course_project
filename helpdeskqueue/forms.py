@@ -42,4 +42,8 @@ class QueueForm(FlaskForm):
 class PageAction(FlaskForm):
     filter_by = SelectField('Filter', choices= [('all', "All"),('open', "Open"),('assisting',"Assisting"), ('complete',"Complete"), ('canceled',"Canceled")])
     submit = SubmitField('Complete')
+    open_filter_button = SubmitField('Open')
+    assisting_filter_button = SubmitField('Assisting')
+    complete_filter_button = SubmitField('Complete')
+    canceled_filter_button = SubmitField('Canceled')
 
