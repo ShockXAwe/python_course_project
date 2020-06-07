@@ -29,4 +29,4 @@ class Post(db.Model):
     assisted_by = db.Column(db.String, nullable = True)
 
     def __repr__(self):
-        return f"Post('{self.title}','{self.date_posted}')"
+        return f"Post('{self.title}','{self.date_posted}, {self.status}')"

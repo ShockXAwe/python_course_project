@@ -16,12 +16,19 @@ status = ['open', 'assisting', 'complete', 'canceled']
 @app.route("/")
 @app.route("/home", methods = ['GET', 'POST'])
 def home():
+    page = request.args.get('page', 1, type = int)
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
     if current_user.is_authenticated and (current_user.user_type == 'user'):
-        return redirect(url_for('user_page'))
+        return redirect(url_for('user_home'))
     if current_user.is_authenticated and (current_user.user_type == 'admin'):
         return redirect(url_for('admin'))
-    count = "5"
-    return render_template('home.html', count = count)
+
+    return render_template('home.html', posts_assisting = posts_assisting, posts_open = posts_open )
 
 @app.route("/register", methods = ['GET', 'POST'])
 def register():
@@ -75,7 +82,7 @@ def login():
             ## next_page is a variable set to take the user to the page it originally tried to access but failed to do so incase they werent logged in
             next_page = request.args.get('next')
             ## turnary arguement, redirect to next_page if there was a next_page at the time if not take them straight to the home page
-            return redirect(next_page) if next_page else redirect(url_for('user_page', username = user.username))
+            return redirect(next_page) if next_page else redirect(url_for('user_home', username = user.username))
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title = 'Login', form=form)
@@ -91,10 +98,25 @@ def logout():
 #####################################################################################
 #####################################################################################
 
-@app.route("/user_page", methods = ['GET', 'POST'])
+@app.route("/user_home", methods = ['GET', 'POST'])
 @login_required
-def user_page():
-    return render_template('user_page.html')
+def user_home():
+    action = PageAction()
+    form = QueueForm
+    if request.method == 'POST':
+        post = Post.query.get(action.search)
+        print("This is the post variable within the user_home: ", post)
+        return render_template('user_search_ticket.html', title = post.title, post = post, admin = admin, status = status, form = form, action = action)
+    return render_template('user_home.html', action = action)
+
+@app.route("/user_search_ticket/<int:post_id>", methods = ['GET', 'POST'])
+@login_required
+def user_search_ticket(post_id):
+    print("##########################################", post_id)
+    form = QueueForm()
+    post = Post.query.get(post_id)
+    print("##############################################################",post)
+    return render_template('user_search_ticket.html', post = post, admin = admin, status = status, form = form)
 
 @app.route("/post/new", methods = ['GET', 'POST'])
 @login_required
@@ -102,7 +124,6 @@ def create_post():
     form = QueueForm()
     if form.validate_on_submit():
         post = Post(title = form.title.data, content = form.content.data, category = form.category.data, status = status[0], author = current_user)
-        print('***********************************************************************', 'Category: ',form.content, 'Content: ',form.content.data)
         db.session.add(post)
         db.session.commit()
         flash('You are now in line for help desk support!', 'success')
@@ -126,6 +147,7 @@ def user_posts(username):
     posts = Post.query.filter_by(author = user)\
         .order_by(Post.date_posted.desc())\
         .paginate(page = page, per_page = 5)
+    print(type(posts))
     ## render_template is the function that points at the html you want to direct the route to, you can add a variable in the arguements to be used within the html using jinja
     return render_template('user_posts.html', posts = posts, user = user, status = status, action = action, filter_status = 'open')
 
@@ -166,7 +188,6 @@ def user_posts_assisting(username):
 def user_posts_complete(username):
     ## paginate is used here to show a certain amount of posts per page
     action = PageAction()
-    print(PageAction().filter_by)
     page = request.args.get('page', 1, type = int)
     user = User.query.filter_by(username = username).first_or_404()
     posts = Post.query.filter_by(author = user, status = status[2])\
@@ -182,7 +203,6 @@ def user_posts_complete(username):
 def user_posts_canceled(username):
     ## paginate is used here to show a certain amount of posts per page
     action = PageAction()
-    print(PageAction().filter_by)
     page = request.args.get('page', 1, type = int)
     user = User.query.filter_by(username = username).first_or_404()
     posts = Post.query.filter_by(author = user, status = status[3])\
@@ -202,8 +222,21 @@ def user_posts_canceled(username):
 @app.route("/admin", methods = ['GET', 'POST'])
 @login_required
 def admin_home():
+    page = request.args.get('page', 1, type = int)
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_complete = Post.query.filter_by(status = status[2])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_canceled = Post.query.filter_by(status = status[3])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
     if current_user.user_type == 'admin':
-        return render_template('admin_home.html')
+        return render_template('admin_home.html', posts_open = posts_open, posts_assisting = posts_assisting, posts_complete = posts_complete, posts_canceled = posts_canceled)
     else:
         flash('You are unautorized to access this page', 'danger')
         return redirect(url_for('home'))
@@ -230,7 +263,7 @@ def reports():
         ## paginate is used here to show a certain amount of posts per page
         page = request.args.get('page', 1, type = int)
         posts = Post.query.order_by(Post.date_posted.desc()).paginate(page = page, per_page = 5)
-        return render_template('reports.html')
+        return render_template('reports.html', posts = posts, status = status)
     else:
         flash('You are unautorized to access this page', 'danger')
         return redirect(url_for('home'))
@@ -249,7 +282,7 @@ def post(post_id):
     form = QueueForm()
     action = PageAction()
     post = Post.query.get_or_404(post_id)
-    if request.method == 'POST' and (current_user.user_type == 'admin'):
+    if request.method == 'POST' and (current_user.user_type == admin):
         post.status = status[2]
         post.notes = form.notes.data
         post.assisted_by = current_user.username

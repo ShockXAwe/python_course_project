@@ -1,17 +1,16 @@
 {% extends 'layout.html' %}
 {% block content %}
-
-    <h2>This is the admin page</h2>
-
     {% for post in posts.items %}
         {% if post.status == status[0] or post.status == status[1] %}
             <article class="media content-section">
                 <div class="media-body">
                 <div class="article-metadata">
                     {% if post.status == status[0] %}
+                        <p style="background-color: #FFFF00; text-align: center"><strong>Ticket Number: {{ post.id }}</strong></p>
                         <p style="background-color: #FFFF00; text-align: center"><strong>Status: {{ post.status.upper() }}</strong></p>
                     {% endif %}
                     {% if post.status == status[1] %}
+                        <p style = "background-color: #b2ff59; text-align: center" ><strong>Ticket Number: {{ post.id }}</strong></p>
                         <p style = "background-color: #b2ff59; text-align: center" ><strong>Status: {{ post.status.upper() }}</strong></p>
                         <p style = "background-color: #b2ff59; text-align: center"><strong>Assignee: {{ post.assisted_by.upper() }}</strong></p>
                     {% endif %}
@@ -36,4 +35,3 @@
         {% endif %}
     {% endfor %}
 {% endblock content %}
-

@@ -1,12 +1,17 @@
 {% extends 'layout.html' %}
 {% block content %}
 
-    <h2>This is the admins home page</h2>
-    <h1>Welcome!</h1>
-    <h2>Please select below</h2>
-    <p>Tickets</p>
-    <a class="btn btn-secondary btn-lg mt-1 mb-1" href="{{ url_for('admin')}}">Tickets</a>
-    <p>Reports</p>
-    <a class="btn btn-secondary btn-lg mt-1 mb-1" href="{{ url_for('reports')}}">Reports</a>
-
+    <h1>Please select below</h1>
+    <br>
+    <h2>View all tickets with status: Open, Assisting</h2>
+    <a class="btn btn-secondary btn-lg mt-1 mb-1" href="{{ url_for('admin')}}">Active Tickets</a>
+    <br>
+    <br>
+    <h2>View all tickets with status: Complete, Canceled</h2>
+    <a class="btn btn-secondary btn-lg mt-1 mb-1" href="{{ url_for('reports')}}">Closed Ticket</a>
 {% endblock content %}
+
+{% block open_count %} {{ posts_open.total }} {% endblock open_count %}
+{% block assisting_count %} {{ posts_assisting.total }} {% endblock assisting_count %}
+{% block complete_count %} {{ posts_complete.total }} {% endblock complete_count %}
+{% block canceled_count %} {{ posts_canceled.total }} {% endblock canceled_count %}

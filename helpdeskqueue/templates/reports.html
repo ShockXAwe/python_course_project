@@ -1,6 +1,39 @@
 {% extends 'layout.html' %}
 {% block content %}
 
-    <h2>This is the reports page</h2>
-    
+{% for post in posts.items %}
+{% if post.status == status[2] or post.status == status[3] %}
+    <article class="media content-section">
+        <div class="media-body">
+        <div class="article-metadata">
+            {% if post.status == status[2] %}
+            <p style = "background-color: green; text-align: center; color: white" ><strong>Ticket Number: {{ post.id }}</strong></p>
+            <p style = "background-color: green; text-align: center; color: white" ><strong>Status: {{ post.status.upper() }}</strong></p>
+            <p style = "background-color: green; text-align: center; color: white"><strong>Assignee: {{ post.assisted_by.upper() }}</strong></p>
+            {% endif %}
+            {% if post.status == status[3] %}
+            <p style = "background-color: red; text-align: center; color: white" ><strong>Ticket Number: {{ post.id }}</strong></p>
+            <p style = "background-color: red; text-align: center; color: white" ><strong>Status: {{ post.status.upper() }}</strong></p>
+            {% endif %}
+            <a class="mr-2" href="{{ url_for('user_posts', username = post.author.username) }}">{{ post.author.username }}</a>
+            <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
+        </div>
+        <h2><a class="article-title" href="{{ url_for('post', post_id = post.id) }}">{{ post.title }}</a></h2>
+        <p class="article-content">{{ post.content }}</p>
+        <p class="article-content"><strong>Admin notes:</strong> {{ post.notes }}</p>
+        </div>
+    </article>
+{% endif %}
+{% endfor %}
+<!-- {% for page_num in posts.iter_pages(left_edge = 1, right_edge = 1, left_current = 1, right_current =2)  %}
+{% if page_num %}
+  {% if posts.page == page_num%}
+    <a class = "btn btn-info mb-4" href = "{{ url_for('reports', page = page_num) }}">{{ page_num }}</a>
+  {% else %}
+    <a class = "btn btn-outline-info mb-4" href = "{{ url_for('reports', page = page_num) }}">{{ page_num }}</a>
+  {% endif %}
+{% else %}
+...
+{% endif %}
+{% endfor %} -->
 {% endblock content %}

@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from flask_login import current_user
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField, IntegerField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from helpdeskqueue.models import User
 
@@ -46,4 +46,6 @@ class PageAction(FlaskForm):
     assisting_filter_button = SubmitField('Assisting')
     complete_filter_button = SubmitField('Complete')
     canceled_filter_button = SubmitField('Canceled')
+    search = TextAreaField('Search for a ticket, by ticket number')
+    submit_search = SubmitField('Search')
 
