@@ -5,10 +5,30 @@
           <div class="article-metadata">
             <a class="mr-2" href="{{ url_for('user_posts', username = post.author.username) }}">{{ post.author.username }}</a>
             <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
-            <a class = "uppercase">{{ post.status }}</a>
+            {% if post.status == status[0] %}
+            <p style="background-color: #FFFF00; text-align: center"><strong>Ticket Number: {{ post.id }}</strong></p>
+            <p style="background-color: #FFFF00; text-align: center"><strong>Status: {{ post.status.upper() }}</strong></p>
+            {% endif %}
+            {% if post.status == status[1] %}
+            <p style = "background-color: #b2ff59; text-align: center" ><strong>Ticket Number: {{ post.id }}</strong></p>
+            <p style = "background-color: #b2ff59; text-align: center" ><strong>Status: {{ post.status.upper() }}</strong></p>
+            <p style = "background-color: #b2ff59; text-align: center"><strong>Assignee: {{ post.assisted_by.upper() }}</strong></p>
+            {% endif %}
+            {% if post.status == status[2] %}
+            <p style = "background-color: green; text-align: center; color: white" ><strong>Ticket Number: {{ post.id }}</strong></p>
+            <p style = "background-color: green; text-align: center; color: white" ><strong>Status: {{ post.status.upper() }}</strong></p>
+            <p style = "background-color: green; text-align: center; color: white"><strong>Assignee: {{ post.assisted_by.upper() }}</strong></p>
+            {% endif %}
+            {% if post.status == status[3] %}
+            <p style = "background-color: red; text-align: center; color: white" ><strong>Ticket Number: {{ post.id }}</strong></p>
+            <p style = "background-color: red; text-align: center; color: white" ><strong>Status: {{ post.status.upper() }}</strong></p>
+            {% endif %}
           </div>
           <h2 class = "article-title">{{ post.title }}</h2>
           <p class= "article-content">{{ post.content }}</p>
+          {% if post.notes %}
+          <p class="article-content"><strong>Admin notes:</strong> {{ post.notes }}</p>
+          {% endif %}
           {% if admin == current_user.user_type %}
           <div>
               {% if post.status == status[0] %}

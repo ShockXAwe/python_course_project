@@ -8,7 +8,7 @@
     <br>
     <br>
     <h2>View all tickets with status: Complete, Canceled</h2>
-    <a class="btn btn-secondary btn-lg mt-1 mb-1" href="{{ url_for('reports')}}">Closed Ticket</a>
+    <a class="btn btn-secondary btn-lg mt-1 mb-1" href="{{ url_for('complete_canceled')}}">Closed Tickets</a>
 {% endblock content %}
 
 {% block open_count %} {{ posts_open.total }} {% endblock open_count %}

@@ -23,7 +23,7 @@
             </article>
         {% endif %}
     {% endfor %}
-    {% for page_num in posts.iter_pages(left_edge = 1, right_edge = 1, left_current = 1, right_current =2)  %}
+    {% for page_num in posts.iter_pages(left_edge = 1, right_edge = 1, left_current = 1, right_current = 2)  %}
         {% if page_num %}
           {% if posts.page == page_num %}
             <a class = "btn btn-info mb-4" href = "{{ url_for('admin', page = page_num) }}">{{ page_num }}</a>
@@ -35,3 +35,12 @@
         {% endif %}
     {% endfor %}
 {% endblock content %}
+
+{% block open_count %} 
+    {% for post in posts.items %}
+                {% if post.status == status[0] %}
+                    {{ (post.status).count('open') }}
+                {% endif %}
+    {% endfor %}
+{% endblock open_count %}
+

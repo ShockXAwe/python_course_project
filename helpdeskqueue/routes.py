@@ -9,6 +9,8 @@ from flask_login import login_user, logout_user, current_user, login_required
 
 status = ['open', 'assisting', 'complete', 'canceled']
 
+
+
 # Home and Register
 #####################################################################################
 #####################################################################################
@@ -63,8 +65,15 @@ def register():
 @app.route("/", methods = ['GET', 'POST'])
 @app.route("/login", methods = ['GET', 'POST'])
 def login():
+    page = request.args.get('page', 1, type = int)
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
     if current_user.is_authenticated and (current_user == 'user'):
-        return redirect(url_for('user_page'))
+        return redirect(url_for('user_home'))
     if current_user.is_authenticated and (current_user == 'admin'):
         return redirect(url_for('admin_home'))
     ## create variable form and make it call LoginForm() from the forms.py which holds requirements for the registration form
@@ -85,7 +94,7 @@ def login():
             return redirect(next_page) if next_page else redirect(url_for('user_home', username = user.username))
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
-    return render_template('login.html', title = 'Login', form=form)
+    return render_template('login.html', title = 'Login', form=form, posts_open = posts_open, posts_assisting = posts_assisting)
 
 @app.route("/logout")
 def logout():
@@ -103,11 +112,18 @@ def logout():
 def user_home():
     action = PageAction()
     form = QueueForm
+    page = request.args.get('page', 1, type = int)
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
     if request.method == 'POST':
         post = Post.query.get(action.search)
         print("This is the post variable within the user_home: ", post)
-        return render_template('user_search_ticket.html', title = post.title, post = post, admin = admin, status = status, form = form, action = action)
-    return render_template('user_home.html', action = action)
+        return render_template('user_search_ticket.html', title = post.title, post = post, admin = admin, status = status, form = form, action = action, posts_open = posts_open, posts_assisting = posts_assisting)
+    return render_template('user_home.html', action = action, posts_open = posts_open, posts_assisting = posts_assisting)
 
 @app.route("/user_search_ticket/<int:post_id>", methods = ['GET', 'POST'])
 @login_required
@@ -122,19 +138,32 @@ def user_search_ticket(post_id):
 @login_required
 def create_post():
     form = QueueForm()
+    page = request.args.get('page', 1, type = int)
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
     if form.validate_on_submit():
         post = Post(title = form.title.data, content = form.content.data, category = form.category.data, status = status[0], author = current_user)
         db.session.add(post)
         db.session.commit()
         flash('You are now in line for help desk support!', 'success')
         return redirect(url_for('in_queue'))
-    return render_template('create_post.html', title = 'Get in line', form = form, legend = 'How can we help you?')
+    return render_template('create_post.html', title = 'Get in line', form = form, legend = 'How can we help you?', posts_open = posts_open, posts_assisting = posts_assisting)
 
 @app.route("/in_queue", methods = ['GET', 'POST'])
 @login_required
 def in_queue():
-    count = "5"
-    return render_template('in_queue.html', count = count)
+    page = request.args.get('page', 1, type = int)
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    return render_template('in_queue.html', posts_open = posts_open, posts_assisting = posts_assisting)
 
 
 @app.route("/user/<string:username>")
@@ -143,7 +172,12 @@ def user_posts(username):
     action = PageAction()
     page = request.args.get('page', 1, type = int)
     user = User.query.filter_by(username = username).first_or_404()
-    print(user.username)
+    # posts_open = Post.query.filter_by(status = status[0])\
+    #     .order_by(Post.date_posted.desc())\
+    #     .paginate(page = page, per_page = 5)
+    # posts_assisting = Post.query.filter_by(status = status[1])\
+    #     .order_by(Post.date_posted.desc())\
+    #     .paginate(page = page, per_page = 5)
     posts = Post.query.filter_by(author = user)\
         .order_by(Post.date_posted.desc())\
         .paginate(page = page, per_page = 5)
@@ -159,6 +193,12 @@ def user_posts_open(username):
     print(PageAction().filter_by)
     page = request.args.get('page', 1, type = int)
     user = User.query.filter_by(username = username).first_or_404()
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
     posts = Post.query.filter_by(author = user, status = status[0])\
         .order_by(Post.date_posted.desc())\
         .paginate(page = page, per_page = 5)
@@ -256,14 +296,14 @@ def admin():
         return redirect(url_for('home'))
 
 ## Need to create reports html and logic
-@app.route("/admin/reports", methods = ['GET', 'POST'])
+@app.route("/admin/complete_canceled", methods = ['GET', 'POST'])
 @login_required
-def reports():
+def complete_canceled():
     if current_user.user_type == 'admin':
         ## paginate is used here to show a certain amount of posts per page
         page = request.args.get('page', 1, type = int)
         posts = Post.query.order_by(Post.date_posted.desc()).paginate(page = page, per_page = 5)
-        return render_template('reports.html', posts = posts, status = status)
+        return render_template('complete_canceled.html', posts = posts, status = status)
     else:
         flash('You are unautorized to access this page', 'danger')
         return redirect(url_for('home'))

@@ -34,6 +34,9 @@
                     <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
                     <h2><a class="article-title" href="{{ url_for('post', post_id = post.id) }}">{{ post.title }}</a></h2>
                     <p class="article-content">{{ post.content }}</p>
+                    {% if post.notes %}
+                    <p class="article-content"><strong>Admin notes:</strong> {{ post.notes }}</p>
+                    {% endif %}
             </div>
             </div>
         </article>
@@ -50,3 +53,4 @@
         {% endif %}
     {% endfor %}
 {% endblock content %}
+
