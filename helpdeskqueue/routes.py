@@ -2,10 +2,11 @@ import os
 import secrets
 #from PIL import Image
 from flask import render_template, url_for, flash, redirect, request, abort
-from helpdeskqueue import app, db, bcrypt
-from helpdeskqueue.forms import LoginForm, RegistrationForm, QueueForm, PageAction
+from helpdeskqueue import app, db, bcrypt, mail
+from helpdeskqueue.forms import LoginForm, RegistrationForm, QueueForm, PageAction, RequestResetForm, ResetPasswordForm
 from helpdeskqueue.models import User, Post
 from flask_login import login_user, logout_user, current_user, login_required
+from flask_mail import Message
 
 status = ['open', 'assisting', 'complete', 'canceled']
 
@@ -35,6 +36,13 @@ def home():
 @app.route("/register", methods = ['GET', 'POST'])
 def register():
     ## logic for if user is authenticated take them straight home
+    page = request.args.get('page', 1, type = int)
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     ## create variable form and make it call RegistrationForm() from the forms.py which holds requirements for the registration form
@@ -51,12 +59,72 @@ def register():
         db.session.commit()
         login_user(user)
         ## flash function will run once redirected to the home.html which is being redirected useing the redirect function and using the url_for('home) pointing at the function home() which isnt the same as the route ("/home
-        flash(f'Your account has been created!! You are now able to log in', 'success')
-        return redirect(url_for('create_post'))
+        flash(f'Your account has been created!! You are now logged in', 'success')
+        return redirect(url_for('user_home'))
         ## form=form is pushing the RegistrationForm() from the forms.py giving all the attributes from that class
-    return render_template('register.html', title = 'Register', form=form)
+    return render_template('register.html', title = 'Register', form=form, posts_open = posts_open, posts_assisting = posts_assisting)
 
+# Password reset
+#####################################################################################
+#####################################################################################
 
+def send_reset_email(user):
+    token = user.get_reset_token()
+    msg = Message('Password Reset Request',
+                  sender='ticketqueuereply@gmail.com',
+                  recipients=[user.email])
+    msg.body = f'''To reset your password, visit the following link:
+{url_for('reset_token', token=token, _external=True)}
+If you did not make this request then simply ignore this email and no changes will be made.
+'''
+    mail.send(msg)
+
+@app.route("/reset_password", methods = ['GET', 'POST'])
+def reset_request():
+    page = request.args.get('page', 1, type = int)
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    if current_user.is_authenticated and (current_user == 'user'):
+        return redirect(url_for('user_home'))
+    if current_user.is_authenticated and (current_user == 'admin'):
+        return redirect(url_for('admin_home'))
+    form = RequestResetForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email = form.email.data).first()
+        send_reset_email(user)
+        flash('An email has been sent with instructions to reset your password.', 'info')
+        return redirect(url_for('login'))
+    return render_template('reset_request.html', title = 'Reset Password', form = form, posts_open = posts_open, posts_assisting = posts_assisting)
+    
+@app.route("/reset_password/<token>", methods = ['GET', 'POST'])
+def reset_token(token):
+    page = request.args.get('page', 1, type = int)
+    posts_open = Post.query.filter_by(status = status[0])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    posts_assisting = Post.query.filter_by(status = status[1])\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page = 5)
+    if current_user.is_authenticated and (current_user == 'user'):
+        return redirect(url_for('user_home'))
+    if current_user.is_authenticated and (current_user == 'admin'):
+        return redirect(url_for('admin_home'))
+    user = User.verify_reset_token(token)
+    if user is None:
+        flash('That is an invalid or expired token', 'warning')
+        return redirect(url_for('reset_request'))
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        user.password = hashed_password
+        db.session.commit()
+        flash('Your password has been updated! You are now able to log in', 'success')
+        return redirect(url_for('login'))
+    return render_template('reset_token.html', title='Reset Password', form=form, posts_open = posts_open, posts_assisting = posts_assisting)
 
 # Login/Logout
 #####################################################################################
@@ -258,6 +326,29 @@ def user_posts_canceled(username):
 #####################################################################################
 #####################################################################################
 
+def send_assist_update(user):
+    msg = Message('Password Reset Request',
+                  sender='ticketqueuereply@gmail.com',
+                  recipients=[user.email])
+    msg.body = f'''Your ticket status has been changed to Assisting. Please come to the IT room to get assistance.
+'''
+    mail.send(msg)
+
+def send_complete_update(user):
+    msg = Message('Password Reset Request',
+                  sender='ticketqueuereply@gmail.com',
+                  recipients=[user.email])
+    msg.body = f'''Your ticket has been changed to Complete. You will now see this under your History with Admin notes, no further action is needed.
+'''
+    mail.send(msg)
+
+def send_canceled_update(user):
+    msg = Message('Password Reset Request',
+                  sender='ticketqueuereply@gmail.com',
+                  recipients=[user.email])
+    msg.body = f'''Your ticket has been changed to Canceled. You will now see this under your History with Admin notes, no further action is needed.
+'''
+    mail.send(msg)
 
 @app.route("/admin", methods = ['GET', 'POST'])
 @login_required
@@ -326,7 +417,10 @@ def post(post_id):
         post.status = status[2]
         post.notes = form.notes.data
         post.assisted_by = current_user.username
-        db.session.commit()   
+        db.session.commit()
+        post_user_id = post.user_id
+        post_user_id_user = User.query.get(post_user_id)
+        send_complete_update(post_user_id_user)   
         flash('Case has been completed', 'success')
         return redirect(url_for('admin'))
     return render_template('post.html', title = post.title, post = post, admin = admin, status = status, form = form, action = action)
@@ -342,6 +436,9 @@ def assist_post(post_id):
     post.status = status[1]
     post.assisted_by = current_user.username
     db.session.commit()
+    post_user_id = post.user_id
+    post_user_id_user = User.query.get(post_user_id)
+    send_assist_update(post_user_id_user)
     flash('Status changed to assisting', 'success')
     return redirect(url_for('post', post_id = post.id, form = form))
     #return redirect(url_for('admin', form = form))
@@ -355,6 +452,9 @@ def cancel_post(post_id):
         post.status = status[3]
         post.assisted_by = current_user.username
         post.notes = f'Manually canceled by {current_user.username}'
-        db.session.commit()   
+        db.session.commit()
+        post_user_id = post.user_id
+        post_user_id_user = User.query.get(post_user_id)
+        send_canceled_update(post_user_id_user)   
         flash('Case has been canceled', 'danger')
         return redirect(url_for('admin'))
